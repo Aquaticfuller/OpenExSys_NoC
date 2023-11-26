@@ -29,5 +29,5 @@ $PROJ_ROOT/$NOC_ROOT/rtl/local_port_look_adead_routing.sv
 $PROJ_ROOT/$NOC_ROOT/rtl/local_port_couple_module.sv
 $PROJ_ROOT/$NOC_ROOT/rtl/hn_router_sam.sv
 $PROJ_ROOT/$NOC_ROOT/rtl/rn_router_sam.sv
-$PROJ_ROOT/$NOC_ROOT/tb/ruby_testbench/rn_tile.sv
-$PROJ_ROOT/$NOC_ROOT/tb/ruby_testbench/hn_tile.sv
+$PROJ_ROOT/tb/ruby_testbench/rn_tile.sv
+$PROJ_ROOT/tb/ruby_testbench/hn_tile.sv
