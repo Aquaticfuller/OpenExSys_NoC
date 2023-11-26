@@ -22,7 +22,7 @@ single_router:
 	-debug_access+all -full64 +vpi
 
 mesh:
-	vcs-2020.03-kgf vcs +vcs+lic+wait +vcs+loopreport -sverilog  -kdb +vc -f flist_mesh.f $(DW_FILES) -top tb_mesh \
+	vcs +vcs+lic+wait +vcs+loopreport -sverilog  -kdb +vc -f flist_mesh.f $(DW_FILES) -top tb_mesh \
 	+error+1 \
 	+define+SIMULATION \
 	+incdir+$(SRC_PATH) \
