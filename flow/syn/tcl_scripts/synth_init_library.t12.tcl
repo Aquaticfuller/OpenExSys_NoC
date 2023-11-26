@@ -1,0 +1,57 @@
+set DB(ssg0p72v,125c) {
+/work/tech/t12nm/Mem/db/ts1n12ffcllsblvtd128x32m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllsblvtd640x34m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta1024x128m4swbsho_130b_ssgnp0p72v125c.db   \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta1024x64m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta1024x72m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta1024x76m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta1024x80m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta128x256m2swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta128x262m2swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta128x32m2swbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta128x51m4swbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta128x59m4swbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta128x82m4swbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta128x88m4swbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta16384x30m16swbsho_130b_ssgnp0p72v125c.db  \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta16384x32m16swbsho_130b_ssgnp0p72v125c.db  \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta16384x39m16swbsho_130b_ssgnp0p72v125c.db  \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta16x88m2swbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta2048x128m4swbsho_130b_ssgnp0p72v125c.db   \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta2048x66m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta2048x98m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta256x80m4swbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta32x86m4swbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta4096x32m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta4096x32m8swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta4096x64m4swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta512x78m4swbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta64x84m4swbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts1n12ffcllulvta8192x32m8swbsho_130b_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts3n12ffcllulvta1024x64m16bo_130b_ssgnp0p72v125c.db       \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvta1088x34m8fwbsho_150a_ssgnp0p72v125c.db    \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvta288x68m2fwbsho_150a_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvta368x34m2fwbsho_150a_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvta544x67m4fwbsho_150a_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvta88x136m2fwbsho_150a_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb1024x32m4wbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb148x136m1wbsho_130b_ssgnp0p72v125c.db     \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb16x112m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb16x120m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb16x128m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb16x152m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb16x154m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb16x244m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb20x64m1wbsho_130b_ssgnp0p72v125c.db       \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb256x10m2wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb288x68m2wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb32x138m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb40x64m1wbsho_130b_ssgnp0p72v125c.db       \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb560x33m4wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb64x256m1wbsho_130b_ssgnp0p72v125c.db      \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb64x64m2wbsho_130b_ssgnp0p72v125c.db       \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb8x256m1wbsho_130b_ssgnp0p72v125c.db       \
+/work/tech/t12nm/Mem/db/ts6n12ffcllulvtb8x64m1wbsho_130b_ssgnp0p72v125c.db        \
+/work/tech/t12nm/STD/db/tcbn12ffcllbwp20p90cpdlvtssgnp0p72v125c.db
+}
+
