@@ -93,7 +93,9 @@ end
 assign vc_data_din = flit_i;
 assign vc_ctrl_din.tgt_id             = flit_dec_i.tgt_id;
 assign vc_ctrl_din.src_id             = flit_dec_i.src_id;
+`ifdef ENABLE_TXN_ID
 assign vc_ctrl_din.txn_id             = flit_dec_i.txn_id;
+`endif
 assign vc_ctrl_din.look_ahead_routing = flit_dec_i.look_ahead_routing;
 `ifdef USE_QOS_VALUE
 assign vc_ctrl_din.qos_value          = flit_dec_i.qos_value;
@@ -276,11 +278,19 @@ endgenerate
 generate
   for(i = 0; i < QOS_VC_NUM_PER_INPUT; i++) begin
     assert property(@(posedge clk)disable iff(~rstn) (vc_ctrl_head_vld[i]) |-> (vc_ctrl_head[i].qos_value == 15))
+`ifdef ENABLE_TXN_ID
           else $fatal("noc_input_vc: rt VC has flit with lower QoS value, txn_id: 0x%x", vc_ctrl_head[i].txn_id);
+`else
+          else $fatal("noc_input_vc: rt VC has flit with lower QoS value");
+`endif
   end
   for(i = QOS_VC_NUM_PER_INPUT; i < VC_NUM; i++) begin
     assert property(@(posedge clk)disable iff(~rstn) (vc_ctrl_head_vld[i]) |-> (vc_ctrl_head[i].qos_value != 15))
+`ifdef ENABLE_TXN_ID
           else $fatal("noc_input_vc: common VC has flit with highest QoS value, txn_id: 0x%x", vc_ctrl_head[i].txn_id);
+`else
+          else $fatal("noc_input_vc: common VC has flit with highest QoS value");
+`endif
   end
 endgenerate
 `endif

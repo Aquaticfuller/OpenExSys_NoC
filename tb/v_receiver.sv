@@ -47,7 +47,9 @@ receiver_flit_decoder_u
 assign check_scoreboard_vld_o         = rx_flit_v_i;
 assign check_scoreboard_o.rec_id      = node_id_i;
 assign check_scoreboard_o.src_id      = flit_ctrl_info.src_id;
+`ifdef ENABLE_TXN_ID
 assign check_scoreboard_o.txn_id      = flit_ctrl_info.txn_id;
+`endif
 assign check_scoreboard_o.flit_data   = rx_flit_i[FLIT_LENGTH-1-:FLIT_DATA_LENGTH];
 
 assign rx_lcrd_v_o  = rx_flit_v_i;

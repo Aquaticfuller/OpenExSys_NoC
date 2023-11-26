@@ -22,7 +22,9 @@ package v_noc_pkg;
   typedef struct packed {
     node_id_t                             tgt_id; // target id
     node_id_t                             src_id; // source id
+`ifdef ENABLE_TXN_ID
     logic     [TxnID_Width-1:0]           txn_id; // transaction id
+`endif
     logic     [SCOREBOARD_TIMEOUT_W-1:0]  timeout_threshold;
     io_port_t                             look_ahead_routing;
     logic     [VC_ID_NUM_MAX_W-1:0]       inport_vc_id;
@@ -45,7 +47,9 @@ package v_noc_pkg;
   typedef struct packed {
     node_id_t                         rec_id; // receiver id (should be the same as tgt_id)
     node_id_t                         src_id; // source id
+`ifdef ENABLE_TXN_ID
     logic     [TxnID_Width-1:0]       txn_id; // transaction id
+`endif
     logic     [FLIT_DATA_LENGTH-1:0]  flit_data;
   } receiver_info_t;
 

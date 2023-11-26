@@ -37,7 +37,7 @@ import rvh_noc_pkg::*;
   input  logic                            flit_vld_i,
   input  logic [QoS_Value_Width-1:0]      flit_qos_value_i,
   output logic                            free_credit_vld_o,
-  output logic [VC_NUM_OUTPORT_IDX_W-1:0] free_credit_vc_id_o,
+  output logic [VC_ID_NUM_MAX_W-1:0]      free_credit_vc_id_o,
 
   input  logic clk,
   input  logic rstn
@@ -46,7 +46,10 @@ import rvh_noc_pkg::*;
 logic [VC_NUM_OUTPORT-1:0][VC_DEPTH_OUTPORT_COUNTER_W-1:0] vc_credit_counter;
 logic [VC_NUM_OUTPORT-1:0]                                 vc_credit_counter_non_zero;
 logic [VC_NUM_OUTPORT-QOS_VC_NUM_PER_INPUT-1:0]         vc_allocate_common_vc_grt_oh;
-logic [$clog2(VC_NUM_OUTPORT-QOS_VC_NUM_PER_INPUT)-1:0] vc_allocate_common_vc_grt_idx;
+
+localparam GRT_IDX_W = VC_NUM_OUTPORT-QOS_VC_NUM_PER_INPUT > 1 ? $clog2(VC_NUM_OUTPORT-QOS_VC_NUM_PER_INPUT) : 1;
+logic [GRT_IDX_W-1:0] vc_allocate_common_vc_grt_idx;
+
 `ifdef COMMON_QOS_EXTRA_RT_VC
 logic [QOS_VC_NUM_PER_INPUT-1:0]                        vc_allocate_rt_vc_grt_oh;
 logic [$clog2(QOS_VC_NUM_PER_INPUT)-1:0]                vc_allocate_rt_vc_grt_idx;
@@ -93,7 +96,7 @@ assign free_credit_vld = (
                               );
 
 assign free_credit_vld_o    = free_credit_vld;
-assign free_credit_vc_id_o  = consume_vc_credit_vc_id;
+assign free_credit_vc_id_o  = VC_ID_NUM_MAX_W'(consume_vc_credit_vc_id);
 
 assign flit_buffer_dequeue_vld = flit_vld_i &  // head valid
                                  free_credit_vld; // vc not empty
@@ -158,7 +161,7 @@ output_port_vc_credit_counter
 )
 output_port_vc_credit_counter_u (
   .free_vc_credit_vld_i       (tx_lcrd_v_i             ),
-  .free_vc_credit_vc_id_i     (tx_lcrd_id_i            ),
+  .free_vc_credit_vc_id_i     (tx_lcrd_id_i[VC_NUM_OUTPORT_IDX_W-1:0] ),
   .consume_vc_credit_vld_i    (consume_vc_credit_vld   ),
   .consume_vc_credit_vc_id_i  (consume_vc_credit_vc_id ),
   .vc_credit_counter_o        (vc_credit_counter       ),

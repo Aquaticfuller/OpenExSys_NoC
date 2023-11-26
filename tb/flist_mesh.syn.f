@@ -1,12 +1,12 @@
-+incdir+$PROJ_ROOT/rtl/include
-+incdir+$PROJ_ROOT/tb
++incdir+$PROJ_ROOT/rtl/rvh_noc/rtl/include
++incdir+$PROJ_ROOT/rtl/rvh_noc/tb
 
-$PROJ_ROOT/rtl/include/rvh_noc_pkg.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/include/rvh_noc_pkg.sv
 
-$PROJ_ROOT/rtl/model/cells/std_dffe.sv
-$PROJ_ROOT/rtl/model/cells/std_dffr.sv
-$PROJ_ROOT/rtl/model/cells/std_dffre.sv
-$PROJ_ROOT/rtl/model/cells/std_dffrve.sv
+$PROJ_ROOT/$L1D_ROOT/models/cells/std_dffe.sv
+$PROJ_ROOT/$L1D_ROOT/models/cells/std_dffr.sv
+$PROJ_ROOT/$L1D_ROOT/models/cells/std_dffre.sv
+$PROJ_ROOT/$L1D_ROOT/models/cells/std_dffrve.sv
 
 $PROJ_ROOT/rtl/util/usage_manager.sv
 $PROJ_ROOT/rtl/util/mp_fifo.sv
@@ -26,22 +26,22 @@ $PROJ_ROOT/rtl/util/commoncell/src/Basic/hw/MuxOH.v
 $PROJ_ROOT/rtl/util/commoncell/src/Queue/hw/AgeMatrixSelector.v
 
 // TODO: need to change to compiled dpsram
-$PROJ_ROOT/rtl/rtl/model/simple_dual_one_clock.v
+$PROJ_ROOT/rtl/rvh_noc/rtl/model/simple_dual_one_clock.v
 
-$PROJ_ROOT/rtl/input_port.sv
-$PROJ_ROOT/rtl/look_adead_routing.sv
-$PROJ_ROOT/rtl/output_port_vc_selection.sv
-$PROJ_ROOT/rtl/input_port_vc.sv
-$PROJ_ROOT/rtl/output_port_vc_assignment.sv
-$PROJ_ROOT/rtl/priority_req_select.sv
-$PROJ_ROOT/rtl/sa_global.sv
-$PROJ_ROOT/rtl/switch.sv
-$PROJ_ROOT/rtl/input_port_flit_decoder.sv
-$PROJ_ROOT/rtl/input_to_output.sv
-$PROJ_ROOT/rtl/output_port_vc_credit_counter.sv
-$PROJ_ROOT/rtl/sa_local.sv
-$PROJ_ROOT/rtl/performance_monitor.sv
-$PROJ_ROOT/rtl/vnet_router.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/input_port.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/look_adead_routing.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/output_port_vc_selection.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/input_port_vc.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/output_port_vc_assignment.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/priority_req_select.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/sa_global.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/switch.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/input_port_flit_decoder.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/input_to_output.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/output_port_vc_credit_counter.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/sa_local.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/performance_monitor.sv
+$PROJ_ROOT/rtl/rvh_noc/rtl/vnet_router.sv
 
-$PROJ_ROOT/tb/top_mesh_syn.sv  
-// $PROJ_ROOT/tb/testbench.sv
+$PROJ_ROOT/rtl/rvh_noc/tb/top_mesh_syn.sv  
+// $PROJ_ROOT/rtl/rvh_noc/tb/testbench.sv

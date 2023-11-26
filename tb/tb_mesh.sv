@@ -1,6 +1,9 @@
 module tb_mesh
 import rvh_noc_pkg::*;
 import v_noc_pkg::*;
+`ifdef EBI
+import test_ebi_pkg::*;
+`endif
 #(
   // mesh parameters
   parameter  NODE_NUM_X_DIMESION = 3,
@@ -10,7 +13,7 @@ import v_noc_pkg::*;
   parameter  INPUT_PORT_NUM = INPUT_PORT_NUMBER,
   parameter  OUTPUT_PORT_NUM = OUTPUT_PORT_NUMBER,
   parameter  LOCAL_PORT_NUM  = INPUT_PORT_NUM-4,
-  parameter type flit_payload_t = logic[FLIT_LENGTH-1:0],
+  parameter type flit_payload_t = cache_scu_cc_test_t,
 
   // parameter  QOS_VC_NUM_PER_INPUT = QOS_VC_NUM_PER_INPUT,
 
@@ -56,9 +59,17 @@ import v_noc_pkg::*;
   
 
   // test_generator parameters
-  parameter TEST_CASE_MESH_RANDOM   = 1,                      // random sender and receiver
-  parameter TEST_CASE_MESH_DIAGONAL = !TEST_CASE_MESH_RANDOM, // from (0,0) to (NODE_NUM_X_DIMESION-1, NODE_NUM_Y_DIMESION-1)
-  
+  parameter TEST_CASE_MESH_RANDOM         = 1,                      // random sender and receiver
+  parameter TEST_CASE_MESH_DIAGONAL       = 0, // from (0,0) to (NODE_NUM_X_DIMESION-1, NODE_NUM_Y_DIMESION-1)
+  parameter TEST_CASE_MESH_BIT_COMPLEMENT = 0,
+  parameter TEST_CASE_MESH_BIT_REVERSE    = 0,
+  parameter TEST_CASE_MESH_BIT_ROTATION   = 0,
+  parameter TEST_CASE_MESH_NEIGHBOR       = 0,
+  parameter TEST_CASE_MESH_SHUFFLE        = 0,
+  parameter TEST_CASE_MESH_TRANSPOSE      = 0,
+  parameter TEST_CASE_MESH_TORNADO        = 0,
+
+
   parameter RANDOM_BIT_NUM          = 168, // 32,64,80,128,168
   
   parameter SCOREBOARD_TIMEOUT_EN        = !TEST_CASE_MESH_DIAGONAL,
@@ -116,6 +127,17 @@ import v_noc_pkg::*;
 
   logic clk;
   logic rstn;
+`ifdef EBI
+logic bus_clk;
+logic [NODE_NUM_X_DIMESION-2:0][NODE_NUM_Y_DIMESION-1:0][OFF_DIE_WD-1:0] x_inc_bus;
+logic [NODE_NUM_X_DIMESION-2:0][NODE_NUM_Y_DIMESION-1:0][OFF_DIE_WD-1:0] x_dec_bus;
+logic [NODE_NUM_X_DIMESION-1:0][NODE_NUM_Y_DIMESION-2:0][OFF_DIE_WD-1:0] y_inc_bus;
+logic [NODE_NUM_X_DIMESION-1:0][NODE_NUM_Y_DIMESION-2:0][OFF_DIE_WD-1:0] y_dec_bus;
+logic [NODE_NUM_X_DIMESION-2:0][NODE_NUM_Y_DIMESION-1:0] x_inc_credit;
+logic [NODE_NUM_X_DIMESION-2:0][NODE_NUM_Y_DIMESION-1:0] x_dec_credit;
+logic [NODE_NUM_X_DIMESION-1:0][NODE_NUM_Y_DIMESION-2:0] y_inc_credit;
+logic [NODE_NUM_X_DIMESION-1:0][NODE_NUM_Y_DIMESION-2:0] y_dec_credit;
+`endif
 
 
   // generate mesh routers
@@ -191,7 +213,7 @@ import v_noc_pkg::*;
       end
     end
   endgenerate
-
+`ifndef EBI
   // connect each router together
   generate
     for(i = 0; i < NODE_NUM_X_DIMESION; i++) begin: gen_connect_routers_ns_x_dimesion
@@ -244,6 +266,203 @@ import v_noc_pkg::*;
       end
     end
   endgenerate
+
+`else
+genvar z;
+
+generate
+  for(i = 0; i < NODE_NUM_X_DIMESION-1; i++) begin: gen_x_dimension_router
+    for(j = 0; j < NODE_NUM_Y_DIMESION; j++) begin
+      test_ebi  ebi_X_u1(
+      .m1_clk(clk),
+      .bus_clk(bus_clk),
+      .rst(~rstn),
+    // control signals
+      .tx_flit_pend_i(tx_flit_pend[i][j][2]),
+      .tx_flit_v_i(tx_flit_v[i][j][2]),
+      .tx_flit_vc_id_i(tx_flit_vc_id[i][j][2]),
+      .tx_flit_look_ahead_routing_i(tx_flit_look_ahead_routing[i][j][2]),
+
+      .rx_flit_pend_o(rx_flit_pend[i][j][2]),
+      .rx_flit_v_o(rx_flit_v[i][j][2]),
+      .rx_flit_vc_id_o(rx_flit_vc_id[i][j][2]),
+      .rx_flit_look_ahead_routing_o(rx_flit_look_ahead_routing[i][j][2]),
+
+      .tx_lcrd_v_o(tx_lcrd_v[i][j][2]),
+      .tx_lcrd_id_o(tx_lcrd_id[i][j][2]),
+
+      .rx_lcrd_v_i(rx_lcrd_v[i][j][2]),
+      .rx_lcrd_id_i(rx_lcrd_id[i][j][2]),
+
+      .tx_flit_channel_0_i(tx_flit[i][j][2]), // req
+      .rx_flit_channel_0_o(rx_flit[i][j][2]), // req
+
+          //external interface
+      .m1_m2_bus_o(x_inc_bus[i][j]),
+      .m2_m1_credit_i(x_inc_credit[i][j]),
+      .m2_m1_bus_i(x_dec_bus[i][j]),
+      .m1_m2_credit_o(x_dec_credit[i][j])
+    );
+    test_ebi  ebi_X_u2(
+      .m1_clk(clk),
+      .bus_clk(bus_clk),
+      .rst(~rstn),
+    // control signals
+      .tx_flit_pend_i(tx_flit_pend[i+1][j][3]),
+      .tx_flit_v_i(tx_flit_v[i+1][j][3]),
+      .tx_flit_vc_id_i(tx_flit_vc_id[i+1][j][3]),
+      .tx_flit_look_ahead_routing_i(tx_flit_look_ahead_routing[i+1][j][3]),
+
+      .rx_flit_pend_o(rx_flit_pend[i+1][j][3]),
+      .rx_flit_v_o(rx_flit_v[i+1][j][3]),
+      .rx_flit_vc_id_o(rx_flit_vc_id[i+1][j][3]),
+      .rx_flit_look_ahead_routing_o(rx_flit_look_ahead_routing[i+1][j][3]),
+
+      .tx_lcrd_v_o(tx_lcrd_v[i+1][j][3]),
+      .tx_lcrd_id_o(tx_lcrd_id[i+1][j][3]),
+
+      .rx_lcrd_v_i(rx_lcrd_v[i+1][j][3]),
+      .rx_lcrd_id_i(rx_lcrd_id[i+1][j][3]),
+
+      .tx_flit_channel_0_i(tx_flit[i+1][j][3]), // req
+      .rx_flit_channel_0_o(rx_flit[i+1][j][3]), // req
+
+          //external interface
+      .m1_m2_bus_o(x_dec_bus[i][j]),
+      .m2_m1_credit_i(x_dec_credit[i][j]),
+      .m2_m1_bus_i(x_inc_bus[i][j]),
+      .m1_m2_credit_o(x_inc_credit[i][j])
+    );
+    end
+  end
+endgenerate
+
+generate
+  for(i = 0; i < NODE_NUM_X_DIMESION; i++) begin: gen_y_dimension_router
+    for(j = 0; j < NODE_NUM_Y_DIMESION-1; j++) begin
+      test_ebi  ebi_Y_u1(
+      .m1_clk(clk),
+      .bus_clk(bus_clk),
+      .rst(~rstn),
+    // control signals
+      .tx_flit_pend_i(tx_flit_pend[i][j][0]),
+      .tx_flit_v_i(tx_flit_v[i][j][0]),
+      .tx_flit_vc_id_i(tx_flit_vc_id[i][j][0]),
+      .tx_flit_look_ahead_routing_i(tx_flit_look_ahead_routing[i][j][0]),
+
+      .rx_flit_pend_o(rx_flit_pend[i][j][0]),
+      .rx_flit_v_o(rx_flit_v[i][j][0]),
+      .rx_flit_vc_id_o(rx_flit_vc_id[i][j][0]),
+      .rx_flit_look_ahead_routing_o(rx_flit_look_ahead_routing[i][j][0]),
+
+      .tx_lcrd_v_o(tx_lcrd_v[i][j][0]),
+      .tx_lcrd_id_o(tx_lcrd_id[i][j][0]),
+
+      .rx_lcrd_v_i(rx_lcrd_v[i][j][0]),
+      .rx_lcrd_id_i(rx_lcrd_id[i][j][0]),
+
+      .tx_flit_channel_0_i(tx_flit[i][j][0]), // req
+      .rx_flit_channel_0_o(rx_flit[i][j][0]),
+
+          //external interface
+      .m1_m2_bus_o(y_inc_bus[i][j]),
+      .m2_m1_credit_i(y_inc_credit[i][j]),
+      .m2_m1_bus_i(y_dec_bus[i][j]),
+      .m1_m2_credit_o(y_dec_credit[i][j])
+    );
+    test_ebi  ebi_Y_u2(
+      .m1_clk(clk),
+      .bus_clk(bus_clk),
+      .rst(~rstn),
+    // control signals
+      .tx_flit_pend_i(tx_flit_pend[i][j+1][1]),
+      .tx_flit_v_i(tx_flit_v[i][j+1][1]),
+      .tx_flit_vc_id_i(tx_flit_vc_id[i][j+1][1]),
+      .tx_flit_look_ahead_routing_i(tx_flit_look_ahead_routing[i][j+1][1]),
+
+      .rx_flit_pend_o(rx_flit_pend[i][j+1][1]),
+      .rx_flit_v_o(rx_flit_v[i][j+1][1]),
+      .rx_flit_vc_id_o(rx_flit_vc_id[i][j+1][1]),
+      .rx_flit_look_ahead_routing_o(rx_flit_look_ahead_routing[i][j+1][1]),
+
+      .tx_lcrd_v_o(tx_lcrd_v[i][j+1][1]),
+      .tx_lcrd_id_o(tx_lcrd_id[i][j+1][1]),
+
+      .rx_lcrd_v_i(rx_lcrd_v[i][j+1][1]),
+      .rx_lcrd_id_i(rx_lcrd_id[i][j+1][1]),
+
+      .tx_flit_channel_0_i(tx_flit[i][j+1][1]), // req
+      .rx_flit_channel_0_o(rx_flit[i][j+1][1]),
+
+          //external interface
+      .m1_m2_bus_o(y_dec_bus[i][j]),
+      .m2_m1_credit_i(y_dec_credit[i][j]),
+      .m2_m1_bus_i(y_inc_bus[i][j]),
+      .m1_m2_credit_o(y_inc_credit[i][j])
+    );
+    end
+  end
+endgenerate
+
+
+//debug print
+always_ff @(posedge clk) begin
+  for (int i = 0; i < NODE_NUM_X_DIMESION; i++) begin: ebi_debug_log_tx
+    for (int j = 0; j < NODE_NUM_Y_DIMESION; j++) begin
+      for (int z = 0; z < ROUTER_PORT_NUMBER; z++) begin
+        if(tx_flit_v[i][j][z]) begin
+          $write("[%16d] info flit: flit_sender router: (%0d, %0d); target router: ", $time(), i, j);
+          case (z)
+            0: $write("(%0d, %0d)", i, j+1);
+            1: $write("(%0d, %0d)", i, j-1);
+            2: $write("(%0d, %0d)", i+1, j);
+            3: $write("(%0d, %0d)", i-1, j);
+            4: $write("local? wrong!");
+          endcase              
+          $write("vc_id: %1d; look_ahead_routing: %1d(N0,S1,E2,W3,L4-7), flit:", tx_flit_vc_id[i][j][z], tx_flit_look_ahead_routing[i][j][z], "%0h", tx_flit[i][j][z]);
+          $write("                         \n");
+        end
+        if(rx_flit_v[i][j][z]) begin
+          $write("[%16d] info flit: flit_receiver router: (%0d, %0d); source router: ", $time(), i, j);
+          case (z)
+            0: $write("(%0d, %0d)", i, j+1);
+            1: $write("(%0d, %0d)", i, j-1);
+            2: $write("(%0d, %0d)", i+1, j);
+            3: $write("(%0d, %0d)", i-1, j);
+            4: $write("local? wrong!");
+          endcase              
+          $write("vc_id: %1d; look_ahead_routing: %1d(N0,S1,E2,W3,L4-7), flit:", rx_flit_vc_id[i][j][z], rx_flit_look_ahead_routing[i][j][z], "%0h", rx_flit[i][j][z]);
+          $write("                         \n");
+        end
+        if(tx_lcrd_v[i][j][z]) begin
+          $write("[%16d] info credit: crd_receiver router: (%0d, %0d); source router: ", $time(), i, j);
+          case (z)
+            0: $write("(%0d, %0d)", i, j+1);
+            1: $write("(%0d, %0d)", i, j-1);
+            2: $write("(%0d, %0d)", i+1, j);
+            3: $write("(%0d, %0d)", i-1, j);
+            4: $write("local? wrong!");
+          endcase              
+          $write(" credit id:", tx_lcrd_id[i][j][z]);
+          $write("                         \n");
+        end
+        if(rx_lcrd_v[i][j][z]) begin
+          $write("[%16d] info credit: crd_sender router: (%0d, %0d); target router: ", $time(), i, j);
+          case (z)
+            0: $write("(%0d, %0d)", i, j+1);
+            1: $write("(%0d, %0d)", i, j-1);
+            2: $write("(%0d, %0d)", i+1, j);
+            3: $write("(%0d, %0d)", i-1, j);
+            4: $write("local? wrong!");
+          endcase              
+          $write(" credit id:", rx_lcrd_id[i][j][z]);
+          $write("                         \n");
+        end
+      end
+    end
+  end
+end
+`endif
 
   // other unused non-local ports, assign router rx to 0
   generate
@@ -335,6 +554,15 @@ import v_noc_pkg::*;
     .TEST_CASE_NUM_PER_CYCLE(TEST_CASE_NUM_PER_CYCLE  ),
     .TEST_CASE_MESH_RANDOM  (TEST_CASE_MESH_RANDOM    ),
     .TEST_CASE_MESH_DIAGONAL(TEST_CASE_MESH_DIAGONAL  ),
+
+    .TEST_CASE_MESH_BIT_COMPLEMENT(TEST_CASE_MESH_BIT_COMPLEMENT),
+    .TEST_CASE_MESH_BIT_REVERSE   (TEST_CASE_MESH_BIT_REVERSE),
+    .TEST_CASE_MESH_BIT_ROTATION  (TEST_CASE_MESH_BIT_ROTATION),
+    .TEST_CASE_MESH_NEIGHBOR      (TEST_CASE_MESH_NEIGHBOR),
+    .TEST_CASE_MESH_SHUFFLE       (TEST_CASE_MESH_SHUFFLE),
+    .TEST_CASE_MESH_TRANSPOSE     (TEST_CASE_MESH_TRANSPOSE),
+    .TEST_CASE_MESH_TORNADO       (TEST_CASE_MESH_TORNADO),
+
     .NODE_NUM_X_DIMESION    (NODE_NUM_X_DIMESION      ),
     .NODE_NUM_Y_DIMESION    (NODE_NUM_Y_DIMESION      ),
     .LOCAL_PORT_NUM         (LOCAL_PORT_NUM           ),
@@ -538,6 +766,12 @@ endgenerate
     forever #5 clk = ~clk;
   end
 
+`ifdef EBI
+  initial begin
+    bus_clk = 1'b0;
+    forever #5 bus_clk = ~bus_clk;
+  end
+`endif
   //reset generate
   initial begin
     rstn = 1'b0;

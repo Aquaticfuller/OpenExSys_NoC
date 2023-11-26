@@ -12,7 +12,9 @@ parameter OUTPUT_TO_N = 0,
 parameter OUTPUT_TO_S = 0,
 parameter OUTPUT_TO_E = 0,
 parameter OUTPUT_TO_W = 0,
-parameter OUTPUT_TO_L = 0
+parameter OUTPUT_TO_L = 0,
+
+parameter COMMON_OUTPUT_VC_NUM = OUTPUT_TO_L ? 1 + QOS_VC_NUM_PER_INPUT : OUTPUT_VC_NUM-QOS_VC_NUM_PER_INPUT
 )
 (
 // input from global sa
@@ -54,9 +56,9 @@ onehot_mux_look_ahead_routing_sel_u (
 assign look_ahead_routing_sel_o = look_ahead_routing_sel;
 
 
-logic                                          sa_global_sel_rt_vc_flit_en;
-logic [OUTPUT_VC_NUM-QOS_VC_NUM_PER_INPUT-1:0]                      vc_select_vld;   // if local port as outport, doesn't take rt vc into consideration
-logic [OUTPUT_VC_NUM-QOS_VC_NUM_PER_INPUT-1:0][VC_ID_NUM_MAX_W-1:0] vc_select_vc_id; // if local port as outport, doesn't take rt vc into consideration
+logic                                                 sa_global_sel_rt_vc_flit_en;
+logic [COMMON_OUTPUT_VC_NUM-1:0]                      vc_select_vld;   // if local port as outport, doesn't take rt vc into consideration
+logic [COMMON_OUTPUT_VC_NUM-1:0][VC_ID_NUM_MAX_W-1:0] vc_select_vc_id; // if local port as outport, doesn't take rt vc into consideration
 
 `ifdef COMMON_QOS_EXTRA_RT_VC
 assign sa_global_sel_rt_vc_flit_en = &sa_global_qos_value_i; // rt vc has highest QoS value
@@ -66,23 +68,39 @@ assign sa_global_sel_rt_vc_flit_en = '0;
 
 
 // vc_select_vld
-// for vc_select_vld_i, the [0:QOS_VC_NUM_PER_INPUT-1] is rt vc, [QOS_VC_NUM_PER_INPUT:OUTPUT_VC_NUM-1] is common vc
 generate
-  for(i = 0; i < OUTPUT_VC_NUM-QOS_VC_NUM_PER_INPUT; i++) begin: gen_vc_select_vld
-    assign vc_select_vld[i] = sa_global_sel_rt_vc_flit_en ? vc_select_vld_i[0].rt_vld : vc_select_vld_i[i+QOS_VC_NUM_PER_INPUT].common_vld;
-  end
-endgenerate
+  if(!OUTPUT_TO_L) begin
 
-// vc_select_vc_id
-generate
-  for(i = 0; i < OUTPUT_VC_NUM-QOS_VC_NUM_PER_INPUT; i++) begin: gen_vc_select_vc_id
-    assign vc_select_vc_id[i] = sa_global_sel_rt_vc_flit_en ? vc_select_vc_id_i[0].rt_vc_id : vc_select_vc_id_i[i+QOS_VC_NUM_PER_INPUT].common_vc_id;
+    // for vc_select_vld_i, the [0:QOS_VC_NUM_PER_INPUT-1] is rt vc, [QOS_VC_NUM_PER_INPUT:OUTPUT_VC_NUM-1] is common vc
+    for(i = 0; i < OUTPUT_VC_NUM-QOS_VC_NUM_PER_INPUT; i++) begin: gen_vc_select_vld
+      assign vc_select_vld[i] = sa_global_sel_rt_vc_flit_en ? vc_select_vld_i[0].rt_vld : vc_select_vld_i[i+QOS_VC_NUM_PER_INPUT].common_vld;
+    end
+
+    // vc_select_vc_id
+    for(i = 0; i < OUTPUT_VC_NUM-QOS_VC_NUM_PER_INPUT; i++) begin: gen_vc_select_vc_id
+      assign vc_select_vc_id[i] = sa_global_sel_rt_vc_flit_en ? vc_select_vc_id_i[0].rt_vc_id : vc_select_vc_id_i[i+QOS_VC_NUM_PER_INPUT].common_vc_id;
+    end
+  end else begin
+    assign vc_select_vld   = '0;
+    assign vc_select_vc_id = '0;
   end
 endgenerate
 
 // vc assignment for different output ports
 // to N vc:
 // vc0
+`ifdef SINGLE_VC_PER_INPUT_PORT
+generate
+  if(!OUTPUT_TO_L) begin
+    assign vc_assignment_vld_o    = vc_select_vld[0];
+    assign vc_assignment_vc_id_o  = vc_select_vc_id[0];
+  end else begin
+    assign vc_assignment_vld_o    = vc_select_vld_i  [0].common_vld;
+    assign vc_assignment_vc_id_o  = vc_select_vc_id_i[0].common_vc_id;
+  end
+endgenerate
+`else
+
 generate
 
   if(OUTPUT_TO_N) begin: gen_output_to_n // output to N, next hop input is S
@@ -263,6 +281,6 @@ generate
   end
 
 endgenerate
-
+`endif
 
 endmodule

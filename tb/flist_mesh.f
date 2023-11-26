@@ -1,6 +1,6 @@
 +incdir+$PROJ_ROOT/rtl/include
 +incdir+$PROJ_ROOT/tb
-
+// $PROJ_ROOT/$L1D_ROOT/include/rvh_uncore_param_pkg.sv
 $PROJ_ROOT/rtl/include/rvh_noc_pkg.sv
 $PROJ_ROOT/tb/v_noc_pkg.sv  
 

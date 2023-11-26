@@ -13,11 +13,13 @@ module input_port_flit_decoder
 );
 
 `ifdef USE_QOS_VALUE
-assign flit_dec_o.qos_value = flit_i[QoS_Value_Width-1:0];
+assign flit_dec_o.qos_value = flit_i.qos_value;
 `endif
-assign flit_dec_o.tgt_id    = flit_i[QoS_Value_Width+NodeID_Width-1:QoS_Value_Width];
-assign flit_dec_o.src_id    = flit_i[QoS_Value_Width+NodeID_Width+NodeID_Width-1:QoS_Value_Width+NodeID_Width];
-assign flit_dec_o.txn_id    = flit_i[QoS_Value_Width+NodeID_Width+NodeID_Width+TxnID_Width-1:QoS_Value_Width+NodeID_Width+NodeID_Width];
+assign flit_dec_o.tgt_id    = flit_i.tgt_id;
+assign flit_dec_o.src_id    = flit_i.src_id;
+`ifdef ENABLE_TXN_ID
+assign flit_dec_o.txn_id    = flit_i.txn_id;
+`endif
 
 assign flit_dec_o.look_ahead_routing = flit_look_ahead_routing_i;
 

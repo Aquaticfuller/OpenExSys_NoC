@@ -126,8 +126,8 @@ logic     [OUTPUT_PORT_NUM-1:0]                      vc_assignment_vld;
 logic     [OUTPUT_PORT_NUM-1:0][VC_ID_NUM_MAX_W-1:0] vc_assignment_vc_id;
 io_port_t [OUTPUT_PORT_NUM-1:0]                      look_ahead_routing_sel;
 
-logic [INPUT_PORT_NUM-1:0][OUTPUT_PORT_NUMBER-1:0]   sa_local_vld_to_sa_global;
 logic [INPUT_PORT_NUM-1:0]                           sa_local_vld;
+logic [INPUT_PORT_NUM-1:0][OUTPUT_PORT_NUMBER-1:0]   sa_local_vld_to_sa_global;
 logic [INPUT_PORT_NUM-1:0][VC_ID_NUM_MAX_W-1:0]      sa_local_vc_id;
 logic [INPUT_PORT_NUM-1:0][VC_ID_NUM_MAX-1:0]        sa_local_vc_id_oh;
 `ifdef USE_QOS_VALUE
@@ -135,6 +135,24 @@ logic [INPUT_PORT_NUM-1:0][QoS_Value_Width-1:0]      sa_local_qos_value;
 `endif
 `ifdef VC_DATA_USE_DUAL_PORT_RAM
 dpram_used_idx_t [INPUT_PORT_NUM-1:0]                sa_local_dpram_idx;
+`endif
+
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+logic [INPUT_PORT_NUM-1:0]                           sa_local_vld_q;
+logic [INPUT_PORT_NUM-1:0][OUTPUT_PORT_NUMBER-1:0]   sa_local_vld_to_sa_global_q;
+logic [INPUT_PORT_NUM-1:0][VC_ID_NUM_MAX_W-1:0]      sa_local_vc_id_q;
+logic [INPUT_PORT_NUM-1:0][VC_ID_NUM_MAX-1:0]        sa_local_vc_id_oh_q;
+  `ifdef USE_QOS_VALUE
+logic [INPUT_PORT_NUM-1:0][QoS_Value_Width-1:0]      sa_local_qos_value_q;
+  `endif
+  `ifdef VC_DATA_USE_DUAL_PORT_RAM
+dpram_used_idx_t [INPUT_PORT_NUM-1:0]                sa_local_dpram_idx_q;
+  `endif
+
+logic [INPUT_PORT_NUM-1:0]      sa_global_stall;
+logic [INPUT_PORT_NUM-1:0]      sa_local_vld_ena;
+logic [INPUT_PORT_NUM-1:0]      sa_local_ena;
+
 `endif
 
 // =============
@@ -192,7 +210,12 @@ input_port_fromN_u
   .vc_data_head_o               (vc_data_head_N                  ),
 
   // input pop flit ctrl fifo (comes from SA stage)
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [0]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage [0]),
+`endif
+
   .inport_read_vc_id_sa_stage_i   (sa_local_vc_id              [0][VC_NUM_INPUT_N_IDX_W-1:0]), // use sa_local_vc_id instead inport_read_vc_id_sa_stage to remove it from critical path
 `ifdef VC_DATA_USE_DUAL_PORT_RAM
   .inport_read_dpram_idx_i        (sa_local_dpram_idx          [0]),
@@ -241,7 +264,12 @@ input_port_fromS_u
   .vc_data_head_o               (vc_data_head_S                  ),
 
   // input pop flit ctrl fifo (comes from SA stage)
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [1]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage [1]),
+`endif
+
   .inport_read_vc_id_sa_stage_i   (sa_local_vc_id              [1][VC_NUM_INPUT_S_IDX_W-1:0]), // use sa_local_vc_id instead inport_read_vc_id_sa_stage to remove it from critical path
 `ifdef VC_DATA_USE_DUAL_PORT_RAM
   .inport_read_dpram_idx_i        (sa_local_dpram_idx          [1]),
@@ -290,7 +318,12 @@ input_port_fromE_u
   .vc_data_head_o               (vc_data_head_E                  ),
 
   // input pop flit ctrl fifo (comes from SA stage)
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [2]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage [2]),
+`endif
+  
   .inport_read_vc_id_sa_stage_i   (sa_local_vc_id              [2][VC_NUM_INPUT_E_IDX_W-1:0]), // use sa_local_vc_id instead inport_read_vc_id_sa_stage to remove it from critical path
 `ifdef VC_DATA_USE_DUAL_PORT_RAM
   .inport_read_dpram_idx_i        (sa_local_dpram_idx          [2]),
@@ -339,7 +372,12 @@ input_port_fromW_u
   .vc_data_head_o               (vc_data_head_W                  ),
 
   // input pop flit ctrl fifo (comes from SA stage)
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [3]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage [3]),
+`endif
+  
   .inport_read_vc_id_sa_stage_i   (sa_local_vc_id              [3][VC_NUM_INPUT_W_IDX_W-1:0]), // use sa_local_vc_id instead inport_read_vc_id_sa_stage to remove it from critical path
 `ifdef VC_DATA_USE_DUAL_PORT_RAM
   .inport_read_dpram_idx_i        (sa_local_dpram_idx          [3]),
@@ -391,7 +429,12 @@ generate
         .vc_data_head_o               (vc_data_head_L               [i]   ),
 
         // input pop flit ctrl fifo (comes from SA stage)
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+        .inport_read_enable_sa_stage_i  (sa_local_ena [4+i]),
+`else
         .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage [4+i]),
+`endif
+     
         .inport_read_vc_id_sa_stage_i   (sa_local_vc_id              [4+i][VC_NUM_INPUT_L_IDX_W-1:0]), // use sa_local_vc_id instead inport_read_vc_id_sa_stage to remove it from critical path
 `ifdef VC_DATA_USE_DUAL_PORT_RAM
         .inport_read_dpram_idx_i        (sa_local_dpram_idx          [4+i]),
@@ -437,8 +480,11 @@ sa_local_fromN_u (
   .sa_local_dpram_idx_o           (sa_local_dpram_idx           [0]),
 `endif
 
-
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [0]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage  [0]),
+`endif
 
   .clk    (clk ),
   .rstn   (rstn)
@@ -469,7 +515,11 @@ sa_local_fromS_u (
   .sa_local_dpram_idx_o           (sa_local_dpram_idx           [1]),
 `endif
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [1]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage  [1]),
+`endif
 
   .clk    (clk ),
   .rstn   (rstn)
@@ -500,7 +550,11 @@ sa_local_fromE_u (
   .sa_local_dpram_idx_o           (sa_local_dpram_idx           [2]),
 `endif
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [2]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage  [2]),
+`endif
 
   .clk    (clk ),
   .rstn   (rstn)
@@ -531,7 +585,11 @@ sa_local_fromW_u (
   .sa_local_dpram_idx_o           (sa_local_dpram_idx           [3]),
 `endif
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .inport_read_enable_sa_stage_i  (sa_local_ena [3]),
+`else
   .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage  [3]),
+`endif
 
   .clk    (clk ),
   .rstn   (rstn)
@@ -565,7 +623,11 @@ generate
         .sa_local_dpram_idx_o           (sa_local_dpram_idx           [4+i]),
       `endif
 
+      `ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+        .inport_read_enable_sa_stage_i  (sa_local_ena [4+i]),
+      `else
         .inport_read_enable_sa_stage_i  (inport_read_enable_sa_stage  [4+i]),
+      `endif
 
         .clk    (clk ),
         .rstn   (rstn)
@@ -610,6 +672,35 @@ logic [SA_GLOBAL_INPUT_NUM_E-1:0][QoS_Value_Width-1:0]  sa_local_qos_value_all_i
 logic [SA_GLOBAL_INPUT_NUM_W-1:0][QoS_Value_Width-1:0]  sa_local_qos_value_all_inport_toW;
 `endif
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+
+assign sa_local_vld_to_sa_global_all_inport_toN[0] = sa_local_vld_to_sa_global_q[1][0];
+assign sa_local_vld_to_sa_global_all_inport_toN[1] = sa_local_vld_to_sa_global_q[2][0];
+assign sa_local_vld_to_sa_global_all_inport_toN[2] = sa_local_vld_to_sa_global_q[3][0];
+assign sa_local_vc_id_all_inport_toN           [0] = sa_local_vc_id_q           [1];
+assign sa_local_vc_id_all_inport_toN           [1] = sa_local_vc_id_q           [2];
+assign sa_local_vc_id_all_inport_toN           [2] = sa_local_vc_id_q           [3];
+
+  `ifdef USE_QOS_VALUE
+assign sa_local_qos_value_all_inport_toN       [0] = sa_local_qos_value_q       [1];
+assign sa_local_qos_value_all_inport_toN       [1] = sa_local_qos_value_q       [2];
+assign sa_local_qos_value_all_inport_toN       [2] = sa_local_qos_value_q       [3];
+  `endif
+
+generate
+  if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toN_fromL_signal
+    for(i = 0; i < LOCAL_PORT_NUM; i++) begin
+      assign sa_local_vld_to_sa_global_all_inport_toN[3+i] = sa_local_vld_to_sa_global_q[4+i][0];
+      assign sa_local_vc_id_all_inport_toN           [3+i] = sa_local_vc_id_q           [4+i];
+  `ifdef USE_QOS_VALUE
+      assign sa_local_qos_value_all_inport_toN       [3+i] = sa_local_qos_value_q [4+i];
+  `endif
+    end
+  end
+endgenerate
+
+`else
+
 assign sa_local_vld_to_sa_global_all_inport_toN[0] = sa_local_vld_to_sa_global[1][0];
 assign sa_local_vld_to_sa_global_all_inport_toN[1] = sa_local_vld_to_sa_global[2][0];
 assign sa_local_vld_to_sa_global_all_inport_toN[2] = sa_local_vld_to_sa_global[3][0];
@@ -617,24 +708,25 @@ assign sa_local_vc_id_all_inport_toN           [0] = sa_local_vc_id           [1
 assign sa_local_vc_id_all_inport_toN           [1] = sa_local_vc_id           [2];
 assign sa_local_vc_id_all_inport_toN           [2] = sa_local_vc_id           [3];
 
-`ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
 assign sa_local_qos_value_all_inport_toN       [0] = sa_local_qos_value       [1];
 assign sa_local_qos_value_all_inport_toN       [1] = sa_local_qos_value       [2];
 assign sa_local_qos_value_all_inport_toN       [2] = sa_local_qos_value       [3];
-`endif
+  `endif
 
 generate
   if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toN_fromL_signal
     for(i = 0; i < LOCAL_PORT_NUM; i++) begin
       assign sa_local_vld_to_sa_global_all_inport_toN[3+i] = sa_local_vld_to_sa_global[4+i][0];
       assign sa_local_vc_id_all_inport_toN           [3+i] = sa_local_vc_id           [4+i];
-    `ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
       assign sa_local_qos_value_all_inport_toN       [3+i] = sa_local_qos_value [4+i];
-    `endif
+  `endif
     end
   end
 endgenerate
 
+`endif
 
 
 sa_global
@@ -668,6 +760,34 @@ generate
   end
 endgenerate
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+
+assign sa_local_vld_to_sa_global_all_inport_toS[0] = sa_local_vld_to_sa_global_q[0][1];
+assign sa_local_vld_to_sa_global_all_inport_toS[1] = sa_local_vld_to_sa_global_q[2][1];
+assign sa_local_vld_to_sa_global_all_inport_toS[2] = sa_local_vld_to_sa_global_q[3][1];
+assign sa_local_vc_id_all_inport_toS           [0] = sa_local_vc_id_q           [0];
+assign sa_local_vc_id_all_inport_toS           [1] = sa_local_vc_id_q           [2];
+assign sa_local_vc_id_all_inport_toS           [2] = sa_local_vc_id_q           [3];
+
+  `ifdef USE_QOS_VALUE
+assign sa_local_qos_value_all_inport_toS       [0] = sa_local_qos_value_q       [0];
+assign sa_local_qos_value_all_inport_toS       [1] = sa_local_qos_value_q       [2];
+assign sa_local_qos_value_all_inport_toS       [2] = sa_local_qos_value_q       [3];
+  `endif
+
+generate
+  if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toS_fromL_signal
+    for(i = 0; i < LOCAL_PORT_NUM; i++) begin
+      assign sa_local_vld_to_sa_global_all_inport_toS[3+i] = sa_local_vld_to_sa_global_q[4+i][1];
+      assign sa_local_vc_id_all_inport_toS           [3+i] = sa_local_vc_id_q           [4+i];
+  `ifdef USE_QOS_VALUE
+      assign sa_local_qos_value_all_inport_toS       [3+i] = sa_local_qos_value_q       [4+i];
+  `endif
+    end
+  end
+endgenerate
+
+`else
 
 assign sa_local_vld_to_sa_global_all_inport_toS[0] = sa_local_vld_to_sa_global[0][1];
 assign sa_local_vld_to_sa_global_all_inport_toS[1] = sa_local_vld_to_sa_global[2][1];
@@ -676,23 +796,25 @@ assign sa_local_vc_id_all_inport_toS           [0] = sa_local_vc_id           [0
 assign sa_local_vc_id_all_inport_toS           [1] = sa_local_vc_id           [2];
 assign sa_local_vc_id_all_inport_toS           [2] = sa_local_vc_id           [3];
 
-`ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
 assign sa_local_qos_value_all_inport_toS       [0] = sa_local_qos_value       [0];
 assign sa_local_qos_value_all_inport_toS       [1] = sa_local_qos_value       [2];
 assign sa_local_qos_value_all_inport_toS       [2] = sa_local_qos_value       [3];
-`endif
+  `endif
 
 generate
   if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toS_fromL_signal
     for(i = 0; i < LOCAL_PORT_NUM; i++) begin
       assign sa_local_vld_to_sa_global_all_inport_toS[3+i] = sa_local_vld_to_sa_global[4+i][1];
       assign sa_local_vc_id_all_inport_toS           [3+i] = sa_local_vc_id           [4+i];
-    `ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
       assign sa_local_qos_value_all_inport_toS       [3+i] = sa_local_qos_value       [4+i];
-    `endif
+  `endif
     end
   end
 endgenerate
+
+`endif
 
 sa_global
 #(
@@ -725,25 +847,49 @@ generate
   end
 endgenerate
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+
+assign sa_local_vld_to_sa_global_all_inport_toE[0] = sa_local_vld_to_sa_global_q[3][2];
+assign sa_local_vc_id_all_inport_toE           [0] = sa_local_vc_id_q           [3];
+
+  `ifdef USE_QOS_VALUE
+assign sa_local_qos_value_all_inport_toE       [0] = sa_local_qos_value_q       [3];
+  `endif
+
+generate
+  if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toE_fromL_signal
+    for(i = 0; i < LOCAL_PORT_NUM; i++) begin
+      assign sa_local_vld_to_sa_global_all_inport_toE[1+i] = sa_local_vld_to_sa_global_q[4+i][2];
+      assign sa_local_vc_id_all_inport_toE           [1+i] = sa_local_vc_id_q           [4+i];
+  `ifdef USE_QOS_VALUE
+      assign sa_local_qos_value_all_inport_toE       [1+i] = sa_local_qos_value_q       [4+i];
+  `endif
+    end
+  end
+endgenerate
+
+`else
 
 assign sa_local_vld_to_sa_global_all_inport_toE[0] = sa_local_vld_to_sa_global[3][2];
 assign sa_local_vc_id_all_inport_toE           [0] = sa_local_vc_id           [3];
 
-`ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
 assign sa_local_qos_value_all_inport_toE       [0] = sa_local_qos_value       [3];
-`endif
+  `endif
 
 generate
   if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toE_fromL_signal
     for(i = 0; i < LOCAL_PORT_NUM; i++) begin
       assign sa_local_vld_to_sa_global_all_inport_toE[1+i] = sa_local_vld_to_sa_global[4+i][2];
       assign sa_local_vc_id_all_inport_toE           [1+i] = sa_local_vc_id           [4+i];
-    `ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
       assign sa_local_qos_value_all_inport_toE       [1+i] = sa_local_qos_value       [4+i];
-    `endif
+  `endif
     end
   end
 endgenerate
+
+`endif
 
 sa_global
 #(
@@ -777,25 +923,49 @@ generate
 endgenerate
 
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+
+assign sa_local_vld_to_sa_global_all_inport_toW[0] = sa_local_vld_to_sa_global_q[2][3];
+assign sa_local_vc_id_all_inport_toW           [0] = sa_local_vc_id_q           [2];
+
+  `ifdef USE_QOS_VALUE
+assign sa_local_qos_value_all_inport_toW       [0] = sa_local_qos_value_q       [2];
+  `endif
+
+generate
+  if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toW_fromL_signal
+    for(i = 0; i < LOCAL_PORT_NUM; i++) begin
+      assign sa_local_vld_to_sa_global_all_inport_toW[1+i] = sa_local_vld_to_sa_global_q[4+i][3];
+      assign sa_local_vc_id_all_inport_toW           [1+i] = sa_local_vc_id_q           [4+i];
+  `ifdef USE_QOS_VALUE
+      assign sa_local_qos_value_all_inport_toW       [1+i] = sa_local_qos_value_q       [4+i];
+  `endif
+    end
+  end
+endgenerate
+
+`else
 
 assign sa_local_vld_to_sa_global_all_inport_toW[0] = sa_local_vld_to_sa_global[2][3];
 assign sa_local_vc_id_all_inport_toW           [0] = sa_local_vc_id           [2];
 
-`ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
 assign sa_local_qos_value_all_inport_toW       [0] = sa_local_qos_value       [2];
-`endif
+  `endif
 
 generate
   if(LOCAL_PORT_NUM > 0) begin: gen_sa_local_vld_to_sa_global_all_inport_toW_fromL_signal
     for(i = 0; i < LOCAL_PORT_NUM; i++) begin
       assign sa_local_vld_to_sa_global_all_inport_toW[1+i] = sa_local_vld_to_sa_global[4+i][3];
       assign sa_local_vc_id_all_inport_toW           [1+i] = sa_local_vc_id           [4+i];
-    `ifdef USE_QOS_VALUE
+  `ifdef USE_QOS_VALUE
       assign sa_local_qos_value_all_inport_toW       [1+i] = sa_local_qos_value       [4+i];
-    `endif
+  `endif
     end
   end
 endgenerate
+
+`endif
 
 sa_global
 #(
@@ -832,6 +1002,35 @@ endgenerate
 
 `ifdef HAVE_LOCAL_PORT
 
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+
+always_comb begin
+  int k;
+  for(int i = 0; i < LOCAL_PORT_NUM; i++) begin
+    for(int j = 0; j < 4; j++) begin
+      sa_local_vld_to_sa_global_all_inport_toL[i][j] = sa_local_vld_to_sa_global_q[j][4+i];
+      sa_local_vc_id_all_inport_toL           [i][j] = sa_local_vc_id_q           [j];
+    `ifdef USE_QOS_VALUE
+      sa_local_qos_value_all_inport_toL       [i][j] = sa_local_qos_value_q       [j];
+    `endif
+    end
+  `ifdef ALLOW_SAME_ROUTER_L2L_TRANSFER
+    k = 0;
+    for(int j = 0; j < LOCAL_PORT_NUM; j++) begin
+      if(i != j) begin
+        sa_local_vld_to_sa_global_all_inport_toL[i][4+k] = sa_local_vld_to_sa_global_q[4+j][4+i];
+        sa_local_vc_id_all_inport_toL           [i][4+k] = sa_local_vc_id_q           [4+j];
+      `ifdef USE_QOS_VALUE
+        sa_local_qos_value_all_inport_toL       [i][4+k] = sa_local_qos_value_q       [4+j];
+      `endif
+        k++;
+      end
+    end
+  `endif
+  end
+end
+
+`else
 always_comb begin
   int k;
   for(int i = 0; i < LOCAL_PORT_NUM; i++) begin
@@ -857,6 +1056,8 @@ always_comb begin
   `endif
   end
 end
+
+`endif
 
 generate
   if(LOCAL_PORT_NUM > 0) begin: gen_have_sa_global_toL
@@ -900,6 +1101,9 @@ endgenerate
 // ===================
 io_port_t  [INPUT_PORT_NUM-1:0] look_ahead_routing;
 flit_dec_t [INPUT_PORT_NUM-1:0] vc_ctrl_head_sa_local_sel;
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+flit_dec_t [INPUT_PORT_NUM-1:0] vc_ctrl_head_sa_local_sel_q;
+`endif
 
 
 onehot_mux 
@@ -917,8 +1121,13 @@ look_ahead_routing
 #(
 )
 look_ahead_routing_fromN_u (
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .vc_ctrl_head_vld_i     (sa_local_vld_q [0] ),
+  .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel_q[0] ),
+`else
   .vc_ctrl_head_vld_i     (sa_local_vld [0] ),
   .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel[0] ),
+`endif
 
   .node_id_x_ths_hop_i    (node_id_x_ths_hop_i    ),
   .node_id_y_ths_hop_i    (node_id_y_ths_hop_i    ),
@@ -941,8 +1150,13 @@ look_ahead_routing
 #(
 )
 look_ahead_routing_fromS_u (
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .vc_ctrl_head_vld_i     (sa_local_vld_q [1] ),
+  .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel_q[1] ),
+`else
   .vc_ctrl_head_vld_i     (sa_local_vld [1] ),
   .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel[1] ),
+`endif
 
   .node_id_x_ths_hop_i    (node_id_x_ths_hop_i    ),
   .node_id_y_ths_hop_i    (node_id_y_ths_hop_i    ),
@@ -965,8 +1179,13 @@ look_ahead_routing
 #(
 )
 look_ahead_routing_fromE_u (
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .vc_ctrl_head_vld_i     (sa_local_vld_q [2] ),
+  .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel_q[2] ),
+`else
   .vc_ctrl_head_vld_i     (sa_local_vld [2] ),
   .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel[2] ),
+`endif
 
   .node_id_x_ths_hop_i    (node_id_x_ths_hop_i    ),
   .node_id_y_ths_hop_i    (node_id_y_ths_hop_i    ),
@@ -989,8 +1208,13 @@ look_ahead_routing
 #(
 )
 look_ahead_routing_fromW_u (
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+  .vc_ctrl_head_vld_i     (sa_local_vld_q [3] ),
+  .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel_q[3] ),
+`else
   .vc_ctrl_head_vld_i     (sa_local_vld [3] ),
   .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel[3] ),
+`endif
 
   .node_id_x_ths_hop_i    (node_id_x_ths_hop_i    ),
   .node_id_y_ths_hop_i    (node_id_y_ths_hop_i    ),
@@ -1015,8 +1239,13 @@ generate
       #(
       )
       look_ahead_routing_fromL_u (
+      `ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+        .vc_ctrl_head_vld_i     (sa_local_vld_q [4+i] ),
+        .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel_q[4+i] ),
+      `else
         .vc_ctrl_head_vld_i     (sa_local_vld [4+i] ),
         .vc_ctrl_head_i         (vc_ctrl_head_sa_local_sel[4+i] ),
+      `endif
 
         .node_id_x_ths_hop_i    (node_id_x_ths_hop_i    ),
         .node_id_y_ths_hop_i    (node_id_y_ths_hop_i    ),
@@ -1412,6 +1641,104 @@ input_to_output_u
   .consume_vc_credit_vld_o      (consume_vc_credit_vld      ),
   .consume_vc_credit_vc_id_o    (consume_vc_credit_vc_id    )
 );
+
+// ===================
+// SA Local to SA Global stage reg
+// ===================
+
+`ifdef INSERT_PIPELINE_REG_BETWEEN_SA
+generate
+  for(i = 0; i < INPUT_PORT_NUM; i++) begin: gen_sa_local_to_sa_global_reg
+
+    assign sa_global_stall [i] = sa_local_vld_q[i] & ~inport_read_enable_sa_stage[i];
+    assign sa_local_vld_ena[i] = ~sa_global_stall[i];
+    assign sa_local_ena    [i] = sa_local_vld[i] & ~sa_global_stall[i];
+
+    std_dffre
+    #(.WIDTH(1))
+    U_STA_SA_LOCAL_VLD
+    (
+      .clk(clk),
+      .rstn(rstn),
+      .en(sa_local_vld_ena[i]),
+      .d (sa_local_vld    [i]),
+      .q (sa_local_vld_q  [i])
+    );
+
+    std_dffre
+    #(.WIDTH(OUTPUT_PORT_NUMBER))
+    U_STA_SA_LOCAL_VLD_TO_GLOBAL
+    (
+      .clk(clk),
+      .rstn(rstn),
+      .en(sa_local_vld_ena              [i]),
+      .d (sa_local_vld_to_sa_global     [i]),
+      .q (sa_local_vld_to_sa_global_q   [i])
+    );
+
+    std_dffre
+    #(.WIDTH(VC_ID_NUM_MAX_W))
+    U_DAT_SA_LOCAL_VC_ID
+    (
+      .clk(clk),
+      .rstn(rstn),
+      .en(sa_local_ena      [i]),
+      .d (sa_local_vc_id    [i]),
+      .q (sa_local_vc_id_q  [i])
+    );
+
+    std_dffre
+    #(.WIDTH(VC_ID_NUM_MAX))
+    U_DAT_SA_LOCAL_VC_ID_OH
+    (
+      .clk(clk),
+      .rstn(rstn),
+      .en(sa_local_ena          [i]),
+      .d (sa_local_vc_id_oh     [i]),
+      .q (sa_local_vc_id_oh_q   [i])
+    );
+
+  `ifdef USE_QOS_VALUE
+    std_dffre
+    #(.WIDTH(QoS_Value_Width))
+    U_DAT_SA_LOCAL_QOS_VALUE
+    (
+      .clk(clk),
+      .rstn(rstn),
+      .en(sa_local_ena          [i]),
+      .d (sa_local_qos_value    [i]),
+      .q (sa_local_qos_value_q  [i])
+    );
+  `endif
+
+  `ifdef VC_DATA_USE_DUAL_PORT_RAM
+    std_dffre
+    #(.WIDTH($bits(dpram_used_idx_t)))
+    U_DAT_SA_LOCAL_DPRAM_IDX
+    (
+      .clk(clk),
+      .rstn(rstn),
+      .en(sa_local_ena          [i]),
+      .d (sa_local_dpram_idx    [i]),
+      .q (sa_local_dpram_idx_q  [i])
+    );
+  `endif
+
+    std_dffre
+    #(.WIDTH($bits(flit_dec_t)))
+    U_DAT_VC_CTRL_HEAD_SA_LOCAL_SEL
+    (
+      .clk(clk),
+      .rstn(rstn),
+      .en(sa_local_ena                [i]),
+      .d (vc_ctrl_head_sa_local_sel   [i]),
+      .q (vc_ctrl_head_sa_local_sel_q [i])
+    );
+
+  end
+endgenerate
+
+`endif
 
 // ===================
 // SA to ST stage reg

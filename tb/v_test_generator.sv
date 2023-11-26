@@ -18,7 +18,16 @@ import v_noc_pkg::*;
                                          //                               |  \
                                          //                     sender1 (1,0) (local) sender4
   parameter TEST_CASE_MESH_RANDOM   = 0, // random sender and receiver
-  parameter TEST_CASE_MESH_DIAGONAL = 0, // from (0,0) to (NODE_NUM_X_DIMESION-1, NODE_NUM_Y_DIMESION-1)
+  parameter TEST_CASE_MESH_DIAGONAL = 0, // from (0, 0) to (NODE_NUM_X_DIMESION-1, NODE_NUM_Y_DIMESION-1)
+  
+  parameter TEST_CASE_MESH_BIT_COMPLEMENT = 0, // from (x, y) to (radix-x-1, radix-y-1)
+  parameter TEST_CASE_MESH_BIT_REVERSE    = 0,
+  parameter TEST_CASE_MESH_BIT_ROTATION   = 0,
+  parameter TEST_CASE_MESH_NEIGHBOR       = 0,
+  parameter TEST_CASE_MESH_SHUFFLE        = 0,
+  parameter TEST_CASE_MESH_TRANSPOSE      = 0,
+  parameter TEST_CASE_MESH_TORNADO        = 0,
+
   parameter NODE_NUM_X_DIMESION     = 2, // only used in TEST_CASE_MESH_* mode
   parameter NODE_NUM_Y_DIMESION     = 3, // only used in TEST_CASE_MESH_* mode
   parameter LOCAL_PORT_NUM          = 1,  // only used in TEST_CASE_MESH_* mode
@@ -91,7 +100,7 @@ generate
 
 
 
-  else if(TEST_CASE_MESH_RANDOM || TEST_CASE_MESH_DIAGONAL) begin: gen_map_test_case_mesh_x
+  else /*if(TEST_CASE_MESH_RANDOM || TEST_CASE_MESH_DIAGONAL)*/ begin: gen_map_test_case_mesh_x
     // sender id = x_posotion*(NODE_NUM_Y_DIMESION*LOCAL_PORT_NUM) + y_posotion*LOCAL_PORT_NUM + local_port_id
     always_comb begin
       new_test_vld_o = '0;
@@ -219,7 +228,9 @@ generate
         new_test[i].flit_data  = ((src_id_lfsr_data[RANDOM_BIT_NUM-1:0] ^ i) << tgt_id_lfsr_data[$clog2(FLIT_DATA_LENGTH-RANDOM_BIT_NUM)-1:0]) | flit_data_mask;
       end
 
+`ifdef ENABLE_TXN_ID
       assign new_test[i].flit_head.txn_id             = txn_counter + i;
+`endif
 
       assign new_test[i].timeout_threshold            = SCOREBOARD_TIMEOUT_EN ? SCOREBOARD_TIMEOUT_THRESHOLD : '0; // 0 means no timeout error
 
@@ -267,79 +278,153 @@ generate
           end
         endcase
       end
-
     end
-  end
 
 
+  end else begin: gen_test_case_mesh
 
+    logic [FLIT_DATA_LENGTH-1:0] flit_data_mask;
+    assign flit_data_mask = ~({RANDOM_BIT_NUM{1'b1}} << tgt_id_lfsr_data[$clog2(FLIT_DATA_LENGTH-RANDOM_BIT_NUM)-1:0]);
 
-  else if(TEST_CASE_MESH_RANDOM) begin: gen_test_case_mesh_random
-    for(i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin: gen_new_test
-      always_comb begin
-        new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
-        new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
-
-        new_test[i].flit_head.tgt_id.x_position = tgt_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
-        new_test[i].flit_head.tgt_id.y_position = tgt_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+    logic [TEST_CASE_NUM_PER_CYCLE-1:0][$clog2(NODE_NUM_X_DIMESION*NODE_NUM_Y_DIMESION)-1:0] source_id;
+    logic [TEST_CASE_NUM_PER_CYCLE-1:0][$clog2(NODE_NUM_X_DIMESION*NODE_NUM_Y_DIMESION)-1:0] source_id_rev;
+    logic [TEST_CASE_NUM_PER_CYCLE-1:0][$clog2(NODE_NUM_X_DIMESION*NODE_NUM_Y_DIMESION)-1:0] dest_id;
+    for(genvar i_id = 0; i_id < TEST_CASE_NUM_PER_CYCLE; i_id++) begin
+      assign source_id[i_id] = new_test[i_id].flit_head.src_id.y_position * NODE_NUM_X_DIMESION + new_test[i_id].flit_head.src_id.x_position;
+      for(genvar j_id = 0; j_id < $clog2(NODE_NUM_X_DIMESION*NODE_NUM_Y_DIMESION); j_id++) begin
+        assign source_id_rev[i_id][j_id] = source_id[i_id][$clog2(NODE_NUM_X_DIMESION*NODE_NUM_Y_DIMESION)-1-j_id];
       end
-
-
-      logic [FLIT_DATA_LENGTH-1:0] flit_data_mask;
-      always_comb begin
-        flit_data_mask = ~({RANDOM_BIT_NUM{1'b1}} << tgt_id_lfsr_data[$clog2(FLIT_DATA_LENGTH-RANDOM_BIT_NUM)-1:0]);
+    end
+    
+    always_comb begin
+      // default values
+      for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
         new_test[i].flit_data  = '1;
         new_test[i].flit_data  = ((src_id_lfsr_data[RANDOM_BIT_NUM-1:0] ^ i) << tgt_id_lfsr_data[$clog2(FLIT_DATA_LENGTH-RANDOM_BIT_NUM)-1:0]) | flit_data_mask;
-      end
 
-      assign new_test[i].flit_head.txn_id             = txn_counter + i;
-
-`ifdef COMMON_QOS_EXTRA_RT_VC
-      assign new_test[i].timeout_threshold            = (new_test[i].qos_value == '1) ? 2 * (NODE_NUM_X_DIMESION + NODE_NUM_Y_DIMESION - 1) :
-                                                         SCOREBOARD_TIMEOUT_EN ? SCOREBOARD_TIMEOUT_THRESHOLD : '0;
-`else
-      assign new_test[i].timeout_threshold            = SCOREBOARD_TIMEOUT_EN ? SCOREBOARD_TIMEOUT_THRESHOLD : '0;
+`ifdef ENABLE_TXN_ID
+        new_test[i].flit_head.txn_id             = txn_counter + i;
 `endif
 
-      assign new_test[i].mcycle_when_generated        = mcycle_i;
+`ifdef COMMON_QOS_EXTRA_RT_VC
+        new_test[i].timeout_threshold            = //(new_test[i].qos_value == '1) ? 2 * (NODE_NUM_X_DIMESION + NODE_NUM_Y_DIMESION - 1) :
+                                                        SCOREBOARD_TIMEOUT_EN ? SCOREBOARD_TIMEOUT_THRESHOLD : '0;
+`else
+        new_test[i].timeout_threshold            = SCOREBOARD_TIMEOUT_EN ? SCOREBOARD_TIMEOUT_THRESHOLD : '0;
+`endif
 
-      assign new_test[i].flit_head.src_id.device_id   = '0;
-      assign new_test[i].flit_head.tgt_id.device_id   = '0;
+        new_test[i].mcycle_when_generated        = mcycle_i;
 
-      assign new_test[i].flit_head.src_id.device_port = (src_id_lfsr_data[i*2+:2] ^ tgt_id_lfsr_data[RANDOM_BIT_NUM-1-i*2-:2]) % LOCAL_PORT_NUM;
-      assign new_test[i].flit_head.tgt_id.device_port = (src_id_lfsr_data[RANDOM_BIT_NUM-1-i*2-:2] ^ tgt_id_lfsr_data[i*2+:2]) % LOCAL_PORT_NUM;
-    end
-  end
+        new_test[i].flit_head.src_id.device_id   = '0;
+        new_test[i].flit_head.tgt_id.device_id   = '0;
 
-  else if(TEST_CASE_MESH_DIAGONAL) begin: gen_test_case_mesh_diagonal
-    for(i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin: gen_new_test
-      always_comb begin
-        new_test[i].flit_head.src_id.x_position = 0;
-        new_test[i].flit_head.src_id.y_position = 0;
+        new_test[i].flit_head.src_id.device_port = (src_id_lfsr_data[i*2+:2] ^ tgt_id_lfsr_data[RANDOM_BIT_NUM-1-i*2-:2]) % LOCAL_PORT_NUM;
+        new_test[i].flit_head.tgt_id.device_port = (src_id_lfsr_data[RANDOM_BIT_NUM-1-i*2-:2] ^ tgt_id_lfsr_data[i*2+:2]) % LOCAL_PORT_NUM;
 
-        new_test[i].flit_head.tgt_id.x_position = NODE_NUM_X_DIMESION - 1;
-        new_test[i].flit_head.tgt_id.y_position = NODE_NUM_Y_DIMESION - 1;
+        dest_id[i] = '0;
       end
 
 
-      logic [FLIT_DATA_LENGTH-1:0] flit_data_mask;
-      always_comb begin
-        flit_data_mask = ~({RANDOM_BIT_NUM{1'b1}} << tgt_id_lfsr_data[$clog2(FLIT_DATA_LENGTH-RANDOM_BIT_NUM)-1:0]);
-        new_test[i].flit_data  = '1;
-        new_test[i].flit_data  = ((src_id_lfsr_data[RANDOM_BIT_NUM-1:0] ^ i) << tgt_id_lfsr_data[$clog2(FLIT_DATA_LENGTH-RANDOM_BIT_NUM)-1:0]) | flit_data_mask;
+
+      if(TEST_CASE_MESH_RANDOM) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          new_test[i].flit_head.tgt_id.x_position = tgt_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.tgt_id.y_position = tgt_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+        end
+      
+      end else if(TEST_CASE_MESH_DIAGONAL) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = 0;
+          new_test[i].flit_head.src_id.y_position = 0;
+
+          new_test[i].flit_head.tgt_id.x_position = NODE_NUM_X_DIMESION - 1;
+          new_test[i].flit_head.tgt_id.y_position = NODE_NUM_Y_DIMESION - 1;
+
+          new_test[i].timeout_threshold            = SCOREBOARD_TIMEOUT_EN ? SCOREBOARD_TIMEOUT_THRESHOLD : '0;
+
+          new_test[i].flit_head.src_id.device_id   = '0;
+          new_test[i].flit_head.tgt_id.device_id   = '0;
+
+          new_test[i].flit_head.src_id.device_port = 0;
+          new_test[i].flit_head.tgt_id.device_port = 0;
+        end
+
+      end else if (TEST_CASE_MESH_BIT_COMPLEMENT) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          new_test[i].flit_head.tgt_id.x_position = NODE_NUM_X_DIMESION-1-new_test[i].flit_head.src_id.x_position;
+          new_test[i].flit_head.tgt_id.y_position = NODE_NUM_Y_DIMESION-1-new_test[i].flit_head.src_id.y_position;
+        end
+
+      end else if (TEST_CASE_MESH_BIT_REVERSE) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          new_test[i].flit_head.tgt_id.x_position = source_id_rev % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.tgt_id.y_position = (source_id_rev / NODE_NUM_X_DIMESION) % NODE_NUM_Y_DIMESION;
+        end
+
+      end else if (TEST_CASE_MESH_BIT_ROTATION) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          new_test[i].flit_head.tgt_id.x_position = new_test[i].flit_head.src_id.x_position > 0 ? new_test[i].flit_head.src_id.x_position - 1:
+                                                    new_test[i].flit_head.src_id.y_position > 0 ? NODE_NUM_X_DIMESION-1:
+                                                                                                  new_test[i].flit_head.src_id.x_position;
+          new_test[i].flit_head.tgt_id.y_position = new_test[i].flit_head.src_id.x_position > 0 ? new_test[i].flit_head.src_id.y_position : 
+                                                    new_test[i].flit_head.src_id.y_position > 0 ? new_test[i].flit_head.src_id.y_position - 1:
+                                                                                                  new_test[i].flit_head.src_id.y_position;
+        end
+
+      end else if (TEST_CASE_MESH_NEIGHBOR) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          new_test[i].flit_head.tgt_id.x_position = (new_test[i].flit_head.src_id.x_position + 1) % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.tgt_id.y_position = new_test[i].flit_head.src_id.y_position ;
+        end
+
+      end else if (TEST_CASE_MESH_SHUFFLE) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          if(source_id[i] < (NODE_NUM_X_DIMESION*NODE_NUM_Y_DIMESION)/2) begin
+              dest_id[i] = source_id[i] * 2;
+          end else begin
+              dest_id[i] = (source_id[i] *2) - (NODE_NUM_X_DIMESION*NODE_NUM_Y_DIMESION) + 1;
+          end
+          new_test[i].flit_head.tgt_id.x_position = dest_id % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.tgt_id.y_position = (dest_id / NODE_NUM_X_DIMESION) % NODE_NUM_Y_DIMESION;
+        end
+
+      end else if (TEST_CASE_MESH_TRANSPOSE) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          new_test[i].flit_head.tgt_id.x_position = new_test[i].flit_head.src_id.y_position % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.tgt_id.y_position = new_test[i].flit_head.src_id.x_position % NODE_NUM_Y_DIMESION;
+        end
+
+      end else if (TEST_CASE_MESH_TORNADO) begin
+        for(int i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin
+          new_test[i].flit_head.src_id.x_position = src_id_lfsr_data[i*3+:3] % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.src_id.y_position = src_id_lfsr_data[RANDOM_BIT_NUM-1-i*3-:3] % NODE_NUM_Y_DIMESION;
+
+          new_test[i].flit_head.tgt_id.x_position = (new_test[i].flit_head.src_id.x_position + int'($ceil(NODE_NUM_X_DIMESION*1.0/2)) - 1) % NODE_NUM_X_DIMESION;
+          new_test[i].flit_head.tgt_id.y_position = new_test[i].flit_head.src_id.y_position;
+        end
+
       end
-
-      assign new_test[i].flit_head.txn_id             = txn_counter + i;
-
-      assign new_test[i].timeout_threshold            = SCOREBOARD_TIMEOUT_EN ? SCOREBOARD_TIMEOUT_THRESHOLD : '0;
-
-      assign new_test[i].mcycle_when_generated        = mcycle_i;
-
-      assign new_test[i].flit_head.src_id.device_id   = '0;
-      assign new_test[i].flit_head.tgt_id.device_id   = '0;
-
-      assign new_test[i].flit_head.src_id.device_port = 0;
-      assign new_test[i].flit_head.tgt_id.device_port = 0;
     end
   end
 endgenerate
@@ -389,7 +474,7 @@ generate
 
 
 
-  else if(TEST_CASE_MESH_RANDOM || TEST_CASE_MESH_DIAGONAL) begin: gen_test_case_look_ahead_routing_mesh_x
+  else /*if(TEST_CASE_MESH_RANDOM || TEST_CASE_MESH_DIAGONAL)*/ begin: gen_test_case_look_ahead_routing_mesh_x
     for(i = 0; i < TEST_CASE_NUM_PER_CYCLE; i++) begin: gen_new_test_look_ahead_routing
       always_comb begin
         if(new_test[i].flit_head.tgt_id.x_position > new_test[i].flit_head.src_id.x_position) begin

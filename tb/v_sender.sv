@@ -143,11 +143,21 @@ assign flit_buffer_dequeue_vld = free_credit_vld & flit_vld;
 // output to dut
 assign tx_flit_pend_o                 = 1'b1;
 assign tx_flit_v_o                    = flit_buffer_dequeue_vld;
-assign tx_flit_o                      = {flit_buffer_head.flit_data, 
-                                         flit_buffer_head.flit_head.txn_id, 
-                                         flit_buffer_head.flit_head.src_id, 
-                                         flit_buffer_head.flit_head.tgt_id, 
-                                         flit_buffer_head.qos_value};
+// assign tx_flit_o                      = {flit_buffer_head.flit_data, 
+//                                          flit_buffer_head.flit_head.txn_id, 
+//                                          flit_buffer_head.flit_head.src_id, 
+//                                          flit_buffer_head.flit_head.tgt_id, 
+//                                          flit_buffer_head.qos_value};
+assign tx_flit_o[(FLIT_LENGTH-1)-:FLIT_DATA_LENGTH] = flit_buffer_head.flit_data;
+assign tx_flit_o.tgt_id = flit_buffer_head.flit_head.tgt_id;
+assign tx_flit_o.src_id = flit_buffer_head.flit_head.src_id;
+`ifdef ENABLE_TXN_ID
+assign tx_flit_o.txn_id = flit_buffer_head.flit_head.txn_id;
+`endif
+`ifdef USE_QOS_VALUE
+assign tx_flit_o.qos_value = flit_buffer_head.flit_head.qos_value;
+`endif
+
 assign tx_flit_vc_id_o                = {{(VC_ID_NUM_MAX_W-VC_NUM_OUTPORT_IDX_W){1'b0}}, free_credit_vc_id};
 assign tx_flit_look_ahead_routing_o   = flit_buffer_head.flit_head.look_ahead_routing;
 
@@ -155,7 +165,9 @@ assign tx_flit_look_ahead_routing_o   = flit_buffer_head.flit_head.look_ahead_ro
 assign new_scoreboard_entry_vld_o                = tx_flit_v_o;
 assign new_scoreboard_entry_o.tgt_id             = flit_buffer_head.flit_head.tgt_id;
 assign new_scoreboard_entry_o.src_id             = flit_buffer_head.flit_head.src_id;
+`ifdef ENABLE_TXN_ID
 assign new_scoreboard_entry_o.txn_id             = flit_buffer_head.flit_head.txn_id;
+`endif
 assign new_scoreboard_entry_o.timeout_threshold  = flit_buffer_head.timeout_threshold;
 assign new_scoreboard_entry_o.look_ahead_routing = flit_buffer_head.flit_head.look_ahead_routing;
 assign new_scoreboard_entry_o.inport_vc_id       = tx_flit_vc_id_o;

@@ -81,7 +81,7 @@ define_design_lib WORK -path ./$env(TIMESTAMP)_$env(SYN_PDK)_$env(SYN_TOP)_run/W
 #can be omitted#
 source tcl_scripts/file_to_list.tcl
 
-analyze -format  sverilog [concat [expand_file_list "$env(PROJ_ROOT)/tb/${FLIST_NAME}"]]
+analyze -format  sverilog [concat [expand_file_list "$env(PROJ_ROOT)/rtl/rvh_noc/tb/${FLIST_NAME}"]]
 #analyze HDL source code and save intermediate results named .syn in ./$env(TIMESTAMP)_$env(SYN_PDK)_$env(SYN_TOP)_run/work dir, which can be used by elaborate directly even without anlyzing; TODO: what does es1y_define.sv mean?#
 elaborate ${TOP_NAME}
 # write_file -hierarchy -format verilog -output output/rvh1.synth.elaborate.v

@@ -86,7 +86,9 @@ always_comb begin
         for(int k = 0; k < SCOREBOARD_ENTRY_NUM_PER_SENDER; k++) begin
           if(scoreboard_entry_vld_q[j][k]) begin
             if(
+`ifdef ENABLE_TXN_ID
               (scoreboard_entry_q[j][k].txn_id == check_scoreboard_i[i].txn_id) &
+`endif
               (scoreboard_entry_q[j][k].src_id == check_scoreboard_i[i].src_id) &
               (scoreboard_entry_q[j][k].tgt_id == check_scoreboard_i[i].rec_id) &
               (scoreboard_entry_q[j][k].flit_data == check_scoreboard_i[i].flit_data)
@@ -175,7 +177,9 @@ always_ff @(posedge clk) begin
         for(int k = 0; k < SCOREBOARD_ENTRY_NUM_PER_SENDER; k++) begin
           if(scoreboard_entry_vld_q[j][k]) begin
             if((scoreboard_entry_q[j][k].src_id == check_scoreboard_i[i].src_id) &&
+`ifdef ENABLE_TXN_ID
                (scoreboard_entry_q[j][k].txn_id == check_scoreboard_i[i].txn_id) &&
+`endif
                (TEST_CASE_SINGLE_ROUTER || 
                 (scoreboard_entry_q[j][k].tgt_id == check_scoreboard_i[i].rec_id) &&
                 (scoreboard_entry_q[j][k].flit_data == check_scoreboard_i[i].flit_data)
@@ -188,7 +192,11 @@ always_ff @(posedge clk) begin
               ) begin
                 $display("[%16d] error: receiver position mismatch", $time());
                 $display("txn_id: 0x%h, sender: %2d (%d,%d), receiver: %d (%d,%d)", 
+`ifdef ENABLE_TXN_ID
                         check_scoreboard_i[i].txn_id, 
+`else
+                        '0,
+`endif
                         j, check_scoreboard_i[i].src_id.x_position, check_scoreboard_i[i].src_id.y_position, 
                         i, check_scoreboard_i[i].rec_id.x_position, check_scoreboard_i[i].rec_id.y_position);
                 $display("tgt_id: (%d,%d), tgt_local_port: %d, look_ahead_routing: %d, send_time: %d", 
@@ -205,7 +213,11 @@ always_ff @(posedge clk) begin
                   if(scoreboard_entry_q[j][k].tgt_id.device_port != check_scoreboard_i[i].rec_id.device_port) begin
                     $display("[%16d] error: receiver local_port_id mismatch", $time());
                     $display("txn_id: 0x%h, sender: %2d (%d,%d), sender_local_port: %d; receiver: %d (%d,%d), receiver_local_port: %d", 
-                            check_scoreboard_i[i].txn_id,
+`ifdef ENABLE_TXN_ID
+                        check_scoreboard_i[i].txn_id, 
+`else
+                        '0,
+`endif
                             j, check_scoreboard_i[i].src_id.x_position, check_scoreboard_i[i].src_id.y_position, 
                             check_scoreboard_i[i].src_id.device_port,
                             i, check_scoreboard_i[i].rec_id.x_position, check_scoreboard_i[i].rec_id.y_position,
@@ -221,7 +233,11 @@ always_ff @(posedge clk) begin
               if(scoreboard_entry_q[j][k].flit_data != check_scoreboard_i[i].flit_data) begin
                 $display("[%16d] error: data mismatch", $time());
                 $display("txn_id: 0x%h, sender: %2d (%d,%d), receiver: %d (%d,%d), received_data: %h", 
+`ifdef ENABLE_TXN_ID
                         check_scoreboard_i[i].txn_id, 
+`else
+                        '0,
+`endif
                         j, check_scoreboard_i[i].src_id.x_position, check_scoreboard_i[i].src_id.y_position, 
                         i, check_scoreboard_i[i].rec_id.x_position, check_scoreboard_i[i].rec_id.y_position,
                         check_scoreboard_i[i].flit_data);
@@ -237,7 +253,12 @@ always_ff @(posedge clk) begin
       end
       if(find_entry[i] == 1'b0) begin
         $display("[%16d] error: scoreboard failed to find the entry, txn_id: 0x%h, sender: (%d,%d), receiver: (%d,%d)", 
-                        $time(), check_scoreboard_i[i].txn_id, 
+                        $time(),
+`ifdef ENABLE_TXN_ID
+                        check_scoreboard_i[i].txn_id, 
+`else
+                        '0,
+`endif
                         check_scoreboard_i[i].src_id.x_position, check_scoreboard_i[i].src_id.y_position, 
                         check_scoreboard_i[i].rec_id.x_position, check_scoreboard_i[i].rec_id.y_position);
         $finish();
@@ -256,7 +277,11 @@ always_ff @(posedge clk) begin
           $display("[%16d] error: scoreboard entry timeout, timeout_threshold: %d", 
                           $time(), scoreboard_entry_q[i][j].timeout_threshold);
           $display("txn_id: 0x%h, sender: %2d (%d,%d), sender_local_port: %d, qos_value = %d", 
-                  scoreboard_entry_q[i][j].txn_id,
+`ifdef ENABLE_TXN_ID
+                        scoreboard_entry_q[i][j].txn_id, 
+`else
+                        '0,
+`endif
                   i, scoreboard_entry_q[i][j].src_id.x_position, scoreboard_entry_q[i][j].src_id.y_position, 
                   scoreboard_entry_q[i][j].src_id.device_port,
                   scoreboard_entry_q[i][j].qos_value);
@@ -404,7 +429,11 @@ always_ff @(posedge clk) begin
         $display("[%16d] info: scoreboard allocate   entry, sender: %2d (%d,%d), txn_id: 0x%h, QoS = %d, inport_vc_id:%d, tgt_id: (%d,%d), tgt_local_port: %d, look_ahead_routing: %d, send_data: %h", 
                     $time(), i, 
                     scoreboard_entry_d[i][j].src_id.x_position, scoreboard_entry_d[i][j].src_id.y_position, 
+`ifdef ENABLE_TXN_ID
                     scoreboard_entry_d[i][j].txn_id, 
+`else
+                    '0,
+`endif
                     scoreboard_entry_d[i][j].qos_value, 
                     scoreboard_entry_d[i][j].inport_vc_id, 
                     scoreboard_entry_d[i][j].tgt_id.x_position, scoreboard_entry_d[i][j].tgt_id.y_position, scoreboard_entry_d[i][j].tgt_id.device_port,
@@ -419,7 +448,11 @@ always_ff @(posedge clk) begin
         $display("[%16d] info: scoreboard deallocate entry, sender: %2d (%d,%d), txn_id: 0x%h, QoS = %d, inport_vc_id:%d, tgt_id: (%d,%d), tgt_local_port: %d, send_data: %h, [noc_latency: %4d], [app_latency: %4d], [receiver (%d,%d) port %d average_noc_bandwidth: %fGBps])", 
                     $time(), i, 
                     scoreboard_entry_q[i][j].src_id.x_position, scoreboard_entry_q[i][j].src_id.y_position, 
+`ifdef ENABLE_TXN_ID
                     scoreboard_entry_q[i][j].txn_id, 
+`else
+                    '0,
+`endif
                     scoreboard_entry_q[i][j].qos_value, 
                     scoreboard_entry_q[i][j].inport_vc_id, 
                     scoreboard_entry_q[i][j].tgt_id.x_position, scoreboard_entry_q[i][j].tgt_id.y_position, scoreboard_entry_q[i][j].tgt_id.device_port,

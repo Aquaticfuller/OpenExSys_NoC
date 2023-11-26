@@ -36,5 +36,8 @@ run:
 run_regression:
 	time ./simv +vcs+loopreport +dumpon=0 +self_finish=0
 
+wave:
+	Verdi-SX -ssf novas.fsdb
+
 clean:
 	rm -rf simv* csrc Verdi* novas* ucli.key

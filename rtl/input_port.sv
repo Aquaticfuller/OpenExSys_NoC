@@ -110,26 +110,40 @@ input_port_vc_u
 
 
 `ifndef SYNTHESIS
+int noc_debug_print=0;
+
+initial begin
+  if ($value$plusargs("noc_debug_print=%d", noc_debug_print)) begin
+    // $display("NOC: noc_debug_print_in=%d", noc_debug_print);
+  end
+end
+
 `ifdef V_INPORT_PRINT_EN
 // debug print
 always_ff @(posedge clk) begin
-  if(rstn) begin
-    if(rx_flit_v_i) begin
-      $display("[%16d] info: receive flit: router:(%d,%d); inport: %1d(N0,S1,E2,W3,L4-7); vc_id: %1d; look_ahead_routing: %1d(N0,S1,E2,W3,L4-7), QoS = %d", 
-                $time(),
-                node_id_x_ths_hop_i, node_id_y_ths_hop_i,
-                INPUT_PORT_NO,
-                rx_flit_vc_id_i,
-                flit_ctrl_info.look_ahead_routing,
-                rx_flit_i[QoS_Value_Width-1:0]);
-      $write("                         ");
-      $display("txn_id: 0x%h, sender: (%d,%d), sender_local_port: %1d", 
-                flit_ctrl_info.txn_id,
-                flit_ctrl_info.src_id.x_position, flit_ctrl_info.src_id.y_position, 
-                flit_ctrl_info.src_id.device_port);
-      $write("                         ");
-      $display("tgt_id: (%d,%d), tgt_local_port: %1d", 
-                flit_ctrl_info.tgt_id.x_position, flit_ctrl_info.tgt_id.y_position, flit_ctrl_info.tgt_id.device_port);
+  if(noc_debug_print) begin
+    if(rstn) begin
+      if(rx_flit_v_i) begin
+        $display("[%16d] info: receive flit: router:(%d,%d); inport: %1d(N0,S1,E2,W3,L4-7); vc_id: %1d; look_ahead_routing: %1d(N0,S1,E2,W3,L4-7), QoS = %d", 
+                  $time(),
+                  node_id_x_ths_hop_i, node_id_y_ths_hop_i,
+                  INPUT_PORT_NO,
+                  rx_flit_vc_id_i,
+                  flit_ctrl_info.look_ahead_routing,
+                  rx_flit_i[QoS_Value_Width-1:0]);
+        $write("                         ");
+        $display("txn_id: 0x%h, sender: (%d,%d), sender_local_port: %1d", 
+`ifdef ENABLE_TXN_ID
+                  flit_ctrl_info.txn_id,
+`else
+                  '0,
+`endif
+                  flit_ctrl_info.src_id.x_position, flit_ctrl_info.src_id.y_position, 
+                  flit_ctrl_info.src_id.device_port);
+        $write("                         ");
+        $display("tgt_id: (%d,%d), tgt_local_port: %1d", 
+                  flit_ctrl_info.tgt_id.x_position, flit_ctrl_info.tgt_id.y_position, flit_ctrl_info.tgt_id.device_port);
+      end
     end
   end
 end
