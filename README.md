@@ -1,11 +1,11 @@
 # OpenExSys_NoC
-OpenExSys_NoC a mesh-based network on chip IP.
+OpenExSys_NoC is a mesh-based network on chip IP.
 
 ## Getting Started
 
 ### Simulation
 
-Currently, OpenExSys_NoC uses vcs to do simulation.
+Currently, OpenExSys_NoC uses *vcs* for simulation.
 
 ```sh
 # set environment varibales
