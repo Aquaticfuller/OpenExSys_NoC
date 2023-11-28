@@ -70,6 +70,11 @@
   `define USE_QOS_VALUE
 `endif
 
+// ----------
+// sliced LLC
+// ----------
+// `define SLICED_LLC // make llc sliced into each tile
+
 
 package rvh_noc_pkg;
 
@@ -85,12 +90,15 @@ localparam  NodeID_Width = NodeID_X_Width + NodeID_Y_Width + NodeID_Device_Port_
 localparam  TxnID_Width = 12;
 localparam  QoS_Value_Width = 4;
 
-
-localparam  INPUT_PORT_NUMBER       = 5; // N,S,E,W,L
-localparam  INPUT_PORT_NUMBER_IDX_W = INPUT_PORT_NUMBER > 1 ? $clog2(INPUT_PORT_NUMBER) : 1;
-localparam  OUTPUT_PORT_NUMBER      = 5; // N,S,E,W,L
 localparam  ROUTER_PORT_NUMBER      = 4;
-localparam  LOCAL_PORT_NUMBER       = INPUT_PORT_NUMBER-ROUTER_PORT_NUMBER;
+`ifdef SLICED_LLC
+localparam  LOCAL_PORT_NUMBER       = 2; // at least 2 local ports, one for sliced llc
+`else
+localparam  LOCAL_PORT_NUMBER       = 1;
+`endif
+localparam  INPUT_PORT_NUMBER       = ROUTER_PORT_NUMBER + LOCAL_PORT_NUMBER; // N,S,E,W,L
+localparam  INPUT_PORT_NUMBER_IDX_W = INPUT_PORT_NUMBER > 1 ? $clog2(INPUT_PORT_NUMBER) : 1;
+localparam  OUTPUT_PORT_NUMBER      = INPUT_PORT_NUMBER; // N,S,E,W,L
 
 `ifdef COMMON_QOS_EXTRA_RT_VC
 localparam  QOS_VC_NUM_PER_INPUT   = 1;
@@ -180,9 +188,9 @@ typedef struct packed {
   parameter  NODE_NUM_Y_DIMESION = 3;
   
   // router parameters
-  parameter  INPUT_PORT_NUM = INPUT_PORT_NUMBER;
+  parameter  INPUT_PORT_NUM  = INPUT_PORT_NUMBER;
   parameter  OUTPUT_PORT_NUM = OUTPUT_PORT_NUMBER;
-  parameter  LOCAL_PORT_NUM  = INPUT_PORT_NUM-4;
+  parameter  LOCAL_PORT_NUM  = LOCAL_PORT_NUMBER;
 
 
   typedef struct packed {
