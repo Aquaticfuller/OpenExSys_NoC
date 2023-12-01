@@ -24,7 +24,18 @@
   `endif
 `endif
 
-// `define ENABLE_TXN_ID // for noc test, enable it
+`define ENABLE_TXN_ID // for noc test, enable it
+
+// ----------
+// sliced LLC
+// ----------
+// `define SLICED_LLC // make llc sliced into each tile // please define this in the compile cmd if you need it
+
+`ifdef SLICED_LLC
+  `ifndef LOCAL_PORT_NUM_2
+    `define LOCAL_PORT_NUM_2
+  `endif
+`endif
 
 // ----------
 // Single vc per input port
@@ -45,6 +56,13 @@
 // whether allow local ports in same router transfer flit, at least 2 local ports
 // ----------
 // `define ALLOW_SAME_ROUTER_L2L_TRANSFER 
+`ifdef SLICED_LLC
+  `define ALLOW_SAME_ROUTER_L2L_TRANSFER 
+`endif
+
+`ifdef LOCAL_PORT_NUM_2
+  `define ALLOW_SAME_ROUTER_L2L_TRANSFER 
+`endif
 
 // ----------
 // insert a pipeline register between local sa and global sa, for better timing
@@ -70,10 +88,6 @@
   `define USE_QOS_VALUE
 `endif
 
-// ----------
-// sliced LLC
-// ----------
-// `define SLICED_LLC // make llc sliced into each tile
 
 
 package rvh_noc_pkg;
